@@ -170,6 +170,47 @@ class MinimaxPlayer(IsolationPlayer):
         # Return the best move from the last completed search iteration
         return best_move
 
+    def terminal_test(self, gameState):
+        """ Return True if the game is over for the active player
+        and False otherwise.
+        """
+        return not bool(gameState.get_legal_moves())  
+
+    def min_value(self, gameState, depth):
+        """ Return the value for a win (+1) if the game is over,
+        otherwise return the minimum value over all legal child
+        nodes.
+        """
+        if self.terminal_test(gameState) or depth == 0 :
+            return self.score(gameState, self)  
+
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        v = float("inf")
+        for m in gameState.get_legal_moves():
+            v = min(v, self.max_value(gameState.forecast_move(m), depth - 1))
+            
+        return v
+
+
+    def max_value(self, gameState, depth):
+        """ Return the value for a loss (-1) if the game is over,
+        otherwise return the maximum value over all legal child
+        nodes.
+        """
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if self.terminal_test(gameState) or depth == 0 :
+            return self.score(gameState, self)   
+
+        v = float("-inf")
+        for m in gameState.get_legal_moves():
+            v = max(v, self.min_value(gameState.forecast_move(m), depth - 1))
+
+        return v
+
     def minimax(self, game, depth):
         """Implement depth-limited minimax search algorithm as described in
         the lectures.
@@ -212,8 +253,18 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
+        best_score = float("-inf")
+        best_move = (-1, -1)
+        for m in game.get_legal_moves():
+            v = self.min_value(game.forecast_move(m), depth - 1)
+            if v > best_score:
+                best_score = v
+                best_move = m
+        return best_move
+
         # TODO: finish this function!
-        raise NotImplementedError
+
+
 
 
 class AlphaBetaPlayer(IsolationPlayer):
