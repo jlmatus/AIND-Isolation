@@ -309,39 +309,51 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            return self.alphabeta(game, self.search_depth)
+            search_depth = 1
+            while 1:
+                best_move = self.alphabeta(game, search_depth)
+                search_depth = search_depth + 1
+
+            return best_move
 
         except SearchTimeout:
-            pass  # Handle any actions required after timeout as needed
+            return best_move  # Handle any actions required after timeout as needed
 
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        
     def terminal_test(self, gameState):
         """ Return True if the game is over for the active player
         and False otherwise.
         """
         return not bool(gameState.get_legal_moves())  
 
-    def min_value(self, gameState, depth):
+    def min_value(self, gameState, alpha, beta, depth):
         """ Return the value for a win (+1) if the game is over,
         otherwise return the minimum value over all legal child
         nodes.
         """
         if self.terminal_test(gameState) or depth == 0 :
-            return self.score(gameState, self)  
+            return (self.score(gameState, self), (-1,-1))  
 
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
         v = float("inf")
+        best_move = gameState.get_legal_moves()[0]
         for m in gameState.get_legal_moves():
-            v = min(v, self.max_value(gameState.forecast_move(m), depth - 1))
-            
-        return v
+            (newValue, move) = self.max_value(gameState.forecast_move(m), alpha, beta,  depth - 1)
+            v = min(v, newValue)
+            if  newValue < v:
+                v = newValue
+                best_move = m
+
+            if v <= alpha: # prune
+                return (v, best_move)
+            beta = min(beta, v)
+        return (v, best_move)
 
 
-    def max_value(self, gameState, depth):
+    def max_value(self, gameState,alpha, beta, depth):
         """ Return the value for a loss (-1) if the game is over,
         otherwise return the maximum value over all legal child
         nodes.
@@ -350,13 +362,21 @@ class AlphaBetaPlayer(IsolationPlayer):
             raise SearchTimeout()
 
         if self.terminal_test(gameState) or depth == 0 :
-            return self.score(gameState, self)   
+            return (self.score(gameState, self), (-1,-1))   
 
         v = float("-inf")
+        best_move = gameState.get_legal_moves()[0]
         for m in gameState.get_legal_moves():
-            v = max(v, self.min_value(gameState.forecast_move(m), depth - 1))
+            (newValue, move) = self.min_value(gameState.forecast_move(m), alpha, beta, depth - 1)
+            if newValue > v:
+                v = newValue
+                best_move = m
 
-        return v
+            if v >= beta:
+                return (v, best_move)
+            alpha = max(alpha, v)
+
+        return (v, best_move)
 
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
@@ -405,19 +425,16 @@ class AlphaBetaPlayer(IsolationPlayer):
                 testing.
         """
 
+        def alpha_beta_algorithm(state, depth):
+            if self.time_left() < self.TIMER_THRESHOLD:
+                raise SearchTimeout()   
+            if not state.get_legal_moves():
+                return (-1,-1)
 
-        if self.time_left() < self.TIMER_THRESHOLD:
-            raise SearchTimeout()
-        
+            move = (-1, -1)
+            (v, move) = self.max_value(state, alpha, beta, depth)
+            return move
 
-        best_score = float("-inf")
-        best_move = (-1, -1)
-        for m in game.get_legal_moves():
-            v = self.min_value(game.forecast_move(m), depth - 1)
-            if v > best_score:
-                best_score = v
-                best_move = m
-        return best_move
 
         # TODO: finish this function!
-        raise NotImplementedError
+        return alpha_beta_algorithm(game, depth)
