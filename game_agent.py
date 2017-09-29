@@ -309,11 +309,12 @@ class AlphaBetaPlayer(IsolationPlayer):
         try:
             # The try/except block will automatically catch the exception
             # raised when the timer is about to expire.
-            search_depth = 1
+            depth = self.search_depth
             while 1:
-                best_move = self.alphabeta(game, search_depth)
-                search_depth = search_depth + 1
+                best_move = self.alphabeta(game, depth)
+                depth = depth + 1
 
+            
             return best_move
 
         except SearchTimeout:
@@ -435,6 +436,4 @@ class AlphaBetaPlayer(IsolationPlayer):
             (v, move) = self.max_value(state, alpha, beta, depth)
             return move
 
-
-        # TODO: finish this function!
         return alpha_beta_algorithm(game, depth)
