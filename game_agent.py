@@ -43,17 +43,17 @@ def custom_score(game, player):
         return float("inf")
 
 
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
     value = float(own_moves - opp_moves)
-       
-    rows = [r for r in range(game.width)]
-    cols = [c for c in range(game.height)]  
-    borders = [(0,c) for c in cols]
-    borders = borders + [(game.width - 1,c) for c in cols]
-    borders = borders + [(r,0) for r in rows]
-    borders = borders + [(r,game.height - 1) for r in rows]
-    if game.get_player_location(player) in  borders: 
+    
+    if game.get_player_location(player) in  [(0, 0), (0, game.height - 1), (game.width - 1, 0), (game.width - 1, game.height - 1)]: # in the corner so we should penalize 
         return value - 2
 
     return value
@@ -81,18 +81,22 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-
     own_moves = len(game.get_legal_moves(player))
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
     value = float(own_moves - opp_moves)
-    
+       
+    rows = [r for r in range(game.width)]
+    cols = [c for c in range(game.height)]  
+    borders = [(0,c) for c in cols]
+    borders = borders + [(game.width - 1,c) for c in cols]
+    borders = borders + [(r,0) for r in rows]
+    borders = borders + [(r,game.height - 1) for r in rows]
+
     if game.get_player_location(player) in  [(0, 0), (0, game.height - 1), (game.width - 1, 0), (game.width - 1, game.height - 1)]: # in the corner so we should penalize 
         return value - 2
+
+    if game.get_player_location(player) in  borders: 
+        return value - 1
     
     return value
 
@@ -127,24 +131,19 @@ def custom_score_3(game, player):
         return float("inf")
 
 
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    value = float(own_moves - opp_moves)
-       
-    rows = [r for r in range(game.width)]
-    cols = [c for c in range(game.height)]  
-    borders = [(0,c) for c in cols]
-    borders = borders + [(game.width - 1,c) for c in cols]
-    borders = borders + [(r,0) for r in rows]
-    borders = borders + [(r,game.height - 1) for r in rows]
+    own_legal_moves = game.get_legal_moves(player)
+    opp_legal_moves = game.get_legal_moves(game.get_opponent(player))
 
-    if game.get_player_location(player) in  [(0, 0), (0, game.height - 1), (game.width - 1, 0), (game.width - 1, game.height - 1)]: # in the corner so we should penalize 
-        return value - 2
+    own_moves = len(own_legal_moves)
+    opp_moves = len(opp_legal_moves)
 
-    if game.get_player_location(player) in  borders: 
-        return value - 1
+    for x,y in zip(own_legal_moves,opp_legal_moves):
+        board = game.forecast_move(x)
+        own_moves += len(board.get_legal_moves(player))
+        board = game.forecast_move(y)
+        opp_moves += len(board.get_legal_moves(game.get_opponent(player)))
 
-    return value
+    return float(own_moves - opp_moves)
 
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never
